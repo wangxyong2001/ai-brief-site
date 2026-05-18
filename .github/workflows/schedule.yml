@@ -1,0 +1,76 @@
+name: Daily Brief Generation
+
+on:
+  schedule:
+    # Run every day at 00:00 UTC (08:00 Beijing time)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date for brief generation (YYYY-MM-DD)'
+        required: false
+        type: string
+
+jobs:
+  generate-brief:
+    name: Generate Daily Brief
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get current date
+        id: date
+        run: |
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            echo "date=${{ github.event.inputs.date }}" >> $GITHUB_OUTPUT
+          else
+            echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger brief generation
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # Call the brief generation API
+            RESPONSE=$(curl -s -X POST "http://localhost:8080/api/brief/generate" \
+              -H "Content-Type: application/json" \
+              -d '{"date": "${{ steps.date.outputs.date }}"}')
+
+            echo "API Response: $RESPONSE"
+
+            # Check if generation was triggered
+            if echo "$RESPONSE" | grep -q '"status"'; then
+              echo "Brief generation triggered successfully"
+
+              # Wait for generation to complete (max 5 minutes)
+              MAX_WAIT=300
+              WAITED=0
+              while [ $WAITED -lt $MAX_WAIT ]; do
+                CHECK=$(curl -s "http://localhost:8080/api/brief/${{ steps.date.outputs.date }}")
+                if echo "$CHECK" | grep -q '"id"'; then
+                  echo "Brief generated successfully!"
+                  echo "$CHECK"
+                  exit 0
+                fi
+                sleep 10
+                WAITED=$((WAITED + 10))
+              done
+
+              echo "Brief generation is taking longer than expected"
+              exit 0
+            else
+              echo "Failed to trigger brief generation"
+              exit 1
+            fi
+
+      - name: Verify brief exists
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            curl -s "http://localhost:8080/api/brief/${{ steps.date.outputs.date }}" | head -c 500

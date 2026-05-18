@@ -1,36 +1,14 @@
 #!/bin/bash
 # Deploy script for ai-brief-site
 # Usage: bash deploy.sh
+#
+# This is a convenience wrapper around scripts/deploy.sh
+# For full options, use: bash scripts/deploy.sh --help
 
 set -e
 
-echo "=== AI Brief Site Deploy ==="
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 1. Pull latest code (if git repo)
-if [ -d .git ]; then
-    git pull origin main
-fi
-
-# 2. Build Docker image
-docker-compose build
-
-# 3. Stop old container
-docker-compose down
-
-# 4. Start new container
-docker-compose up -d
-
-# 5. Wait for health check
-echo "Waiting for container to be healthy..."
-sleep 10
-
-# 6. Verify
-if curl -f http://localhost:8080/health; then
-    echo "✅ Deploy successful!"
-else
-    echo "❌ Health check failed, rolling back..."
-    docker-compose down
-    exit 1
-fi
-
-echo "=== Deploy Complete ==="
+# Run the main deploy script
+exec bash "$SCRIPT_DIR/scripts/deploy.sh" "$@"
