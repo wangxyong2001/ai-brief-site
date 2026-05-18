@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - AI Daily Brief</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <meta name="description" content="{{ summary }}">
+    <meta property="og:title" content="{{ title }}">
+    <meta property="og:description" content="{{ summary }}">
+    <meta property="og:type" content="article">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <a href="/" class="logo">
+                    <h1>AI Daily Brief</h1>
+                    <p class="tagline">每日AI领域动态精选</p>
+                </a>
+                <div class="header-actions">
+                    <button class="theme-toggle" id="theme-toggle" aria-label="切换主题">
+                        <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        </svg>
+                        <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content detail-page">
+            <!-- Breadcrumb -->
+            <nav class="breadcrumb">
+                <a href="/">首页</a>
+                <span class="separator">/</span>
+                <span class="current">{{ brief_date }}</span>
+            </nav>
+
+            <!-- Article -->
+            <article class="article-full">
+                <header class="article-header">
+                    <div class="article-category-badge">{{ source }}</div>
+                    <h1 class="article-title">{{ title }}</h1>
+                    <div class="article-meta">
+                        <time datetime="{{ published }}">{{ published }}</time>
+                        <span class="separator">·</span>
+                        <span class="source">{{ source_display }}</span>
+                    </div>
+                </header>
+
+                <!-- Summary Section -->
+                <section class="article-section summary-section">
+                    <h2>摘要</h2>
+                    <p>{{ summary }}</p>
+                </section>
+
+                <!-- Key Points -->
+                <section class="article-section">
+                    <h2>核心观点</h2>
+                    <ul class="key-points">
+                        {{ key_points }}
+                    </ul>
+                </section>
+
+                <!-- Technical Points -->
+                <section class="article-section">
+                    <h2>技术要点</h2>
+                    <div class="tech-points">
+                        {{ tech_points }}
+                    </div>
+                </section>
+
+                <!-- Application Scenarios -->
+                <section class="article-section">
+                    <h2>应用场景</h2>
+                    <div class="app-scenarios">
+                        {{ app_scenarios }}
+                    </div>
+                </section>
+
+                <!-- Industry Impact -->
+                <section class="article-section">
+                    <h2>行业影响</h2>
+                    <p>{{ industry_impact }}</p>
+                </section>
+
+                <!-- Actions -->
+                <footer class="article-footer">
+                    <a href="{{ original_link }}" target="_blank" rel="noopener noreferrer" class="btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            <polyline points="15 3 21 3 21 9"/>
+                            <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                        查看原文
+                    </a>
+                    <button class="btn-secondary" id="share-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="18" cy="5" r="3"/>
+                            <circle cx="6" cy="12" r="3"/>
+                            <circle cx="18" cy="19" r="3"/>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                        </svg>
+                        分享
+                    </button>
+                </footer>
+            </article>
+
+            <!-- Related Articles -->
+            <section class="related-articles">
+                <h2>相关文章</h2>
+                <div class="related-grid" id="related-grid">
+                    <!-- Dynamically loaded -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Toast -->
+        <div id="toast" class="toast hidden"></div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Powered by FastAPI + LanceDB</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        // Detail page specific scripts
+        document.getElementById('share-btn').addEventListener('click', async function() {
+            const url = window.location.href;
+            const title = document.querySelector('.article-title').textContent;
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title, url });
+                } catch (e) {
+                    if (e.name !== 'AbortError') {
+                        copyToClipboard(url);
+                    }
+                }
+            } else {
+                copyToClipboard(url);
+            }
+        });
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('链接已复制到剪贴板', 'success');
+            }).catch(() => {
+                showToast('复制失败', 'error');
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+    </script>
+</body>
+</html>

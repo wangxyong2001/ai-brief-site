@@ -13,7 +13,7 @@ from config import (
     STATIC_DIR, DATA_DIR, SQLITE_PATH, LANCEDB_PATH,
     API_PORT, DEBUG, SLO_ERROR_RATE_THRESHOLD, SLO_LATENCY_THRESHOLD_MS
 )
-from app.routes import brief, health
+from app.routes import brief, health, articles
 from app.metrics import request_metrics
 
 @asynccontextmanager
@@ -46,6 +46,29 @@ async def lifespan(app: FastAPI):
             brief_id INTEGER REFERENCES briefs(id)
         )
     """)
+    # Articles table for LLM-processed detailed content
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS articles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            original_link TEXT NOT NULL,
+            original_title TEXT NOT NULL,
+            chinese_title TEXT,
+            source_name TEXT NOT NULL,
+            category TEXT DEFAULT 'news',
+            weight INTEGER DEFAULT 5,
+            key_points TEXT,
+            tech_points TEXT,
+            use_cases TEXT,
+            industry_impact TEXT,
+            chinese_summary TEXT,
+            published_at TEXT,
+            processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            brief_id INTEGER REFERENCES briefs(id),
+            score INTEGER DEFAULT 0
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_articles_brief_id ON articles(brief_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_articles_category ON articles(category)")
     conn.commit()
     conn.close()
 
@@ -62,6 +85,7 @@ app = FastAPI(
 # Include routers
 app.include_router(brief.router, prefix="/api/brief", tags=["brief"])
 app.include_router(health.router, tags=["health"])
+app.include_router(articles.router, prefix="/api/articles", tags=["articles"])
 
 # Mount static files
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

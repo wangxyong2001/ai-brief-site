@@ -1,206 +1,248 @@
-// AI Daily Brief Frontend App
+// AI Daily Brief Frontend App - Modern UI
 const API_BASE = '/api/brief';
 
 // State
 let currentDate = new Date();
-let briefsList = [];
-let isLoading = false;
+let articlesData = [];
+let currentCategory = 'all';
+let searchQuery = '';
 
 // DOM Elements
-const briefContent = document.getElementById('brief-content');
-const listContainer = document.getElementById('list-container');
+const articlesGrid = document.getElementById('articles-grid');
+const briefTitle = document.getElementById('brief-title');
+const sourceCount = document.getElementById('source-count');
 const datePicker = document.getElementById('date-picker');
-const currentDateDisplay = document.getElementById('current-date-display');
 const prevDayBtn = document.getElementById('prev-day');
 const nextDayBtn = document.getElementById('next-day');
 const todayBtn = document.getElementById('today-btn');
+const searchInput = document.getElementById('search-input');
+const categoryTabs = document.getElementById('category-tabs');
+const articleModal = document.getElementById('article-modal');
+const articleDetail = document.getElementById('article-detail');
+const modalClose = document.getElementById('modal-close');
 const toast = document.getElementById('toast');
+const themeToggle = document.getElementById('theme-toggle');
 
-// Utility: Format date as YYYY-MM-DD
+// Theme Management
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+// Utility Functions
 function formatDate(date) {
     return date.toISOString().split('T')[0];
 }
 
-// Utility: Format date for display (YYYY年MM月DD日)
-function formatDateDisplay(date) {
-    const d = new Date(date);
+function formatDateDisplay(dateStr) {
+    const d = new Date(dateStr);
     return `${d.getFullYear()}年${String(d.getMonth() + 1).padStart(2, '0')}月${String(d.getDate()).padStart(2, '0')}日`;
 }
 
-// Utility: Show toast notification
 function showToast(message, type = 'info') {
     toast.textContent = message;
     toast.className = `toast ${type}`;
     toast.classList.remove('hidden');
-
-    setTimeout(() => {
-        toast.classList.add('hidden');
-    }, 3000);
+    setTimeout(() => toast.classList.add('hidden'), 3000);
 }
 
-// Render loading state
-function renderLoading(container) {
-    container.innerHTML = `
-        <div class="loading-state">
-            <div class="spinner"></div>
-            <p>加载中...</p>
-        </div>
-    `;
-}
-
-// Render error state
-function renderError(container, message, retryFn) {
-    container.innerHTML = `
-        <div class="error-state">
-            <div class="error-icon">!</div>
-            <p class="error-message">${message}</p>
-            ${retryFn ? '<button class="retry-btn" onclick="(' + retryFn.toString() + ')()">重试</button>' : ''}
-        </div>
-    `;
-}
-
-// Render empty state
-function renderEmpty(container, message) {
-    container.innerHTML = `
-        <div class="empty-state">
-            <div class="empty-icon">-</div>
-            <p>${message}</p>
-        </div>
-    `;
-}
-
-// Render brief content with HTML support
-function renderBriefContent(data) {
-    if (!data) {
-        renderEmpty(briefContent, '该日期暂无简报');
-        return;
-    }
-
-    briefContent.innerHTML = `
-        <h2 class="brief-title">${escapeHtml(data.title)}</h2>
-        <div class="brief-date">${formatDateDisplay(data.date)}</div>
-        <div class="brief-body">${sanitizeHtml(data.content)}</div>
-    `;
-}
-
-// Escape HTML for title
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-// Sanitize HTML content (basic XSS protection)
-function sanitizeHtml(html) {
-    // Allow specific tags only
-    const allowedTags = ['p', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                         'ul', 'ol', 'li', 'a', 'strong', 'em', 'b', 'i',
-                         'code', 'pre', 'blockquote', 'hr'];
-
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-
-    // Remove script tags
-    const scripts = tempDiv.querySelectorAll('script');
-    scripts.forEach(s => s.remove());
-
-    // Remove event handlers
-    const allElements = tempDiv.querySelectorAll('*');
-    allElements.forEach(el => {
-        // Remove event handlers
-        Array.from(el.attributes).forEach(attr => {
-            if (attr.name.startsWith('on')) {
-                el.removeAttribute(attr.name);
-            }
-        });
-
-        // Sanitize href for links
-        if (el.tagName === 'A') {
-            const href = el.getAttribute('href');
-            if (href && !href.startsWith('http') && !href.startsWith('/') && !href.startsWith('#')) {
-                el.removeAttribute('href');
-            } else {
-                el.setAttribute('target', '_blank');
-                el.setAttribute('rel', 'noopener noreferrer');
-            }
-        }
-    });
-
-    return tempDiv.innerHTML;
+function getCategoryClass(category) {
+    const map = {
+        'product': 'product',
+        'opensource': 'opensource',
+        'research': 'research',
+        'news': 'news',
+        'anthropic': 'product',
+        'openai': 'product',
+        'deepmind': 'product',
+        'arxiv': 'research',
+        'github': 'opensource',
+        'huggingface': 'opensource'
+    };
+    return map[category.toLowerCase()] || 'news';
 }
 
-// Render brief list
-function renderBriefList(data) {
-    briefsList = data || [];
+function getCategoryLabel(category) {
+    const map = {
+        'product': '产品动态',
+        'opensource': '开源项目',
+        'research': '学术研究',
+        'news': '行业新闻',
+        'anthropic': 'Anthropic',
+        'openai': 'OpenAI',
+        'deepmind': 'DeepMind',
+        'arxiv': 'arXiv',
+        'github': 'GitHub',
+        'huggingface': 'Hugging Face'
+    };
+    return map[category.toLowerCase()] || category;
+}
 
-    if (briefsList.length === 0) {
-        renderEmpty(listContainer, '暂无历史简报');
+// Render Functions
+function renderLoading() {
+    articlesGrid.innerHTML = `
+        <div class="loading-state" style="grid-column: 1 / -1;">
+            <div class="spinner"></div>
+            <p>加载中...</p>
+        </div>
+    `;
+}
+
+function renderError(message) {
+    articlesGrid.innerHTML = `
+        <div class="error-state" style="grid-column: 1 / -1;">
+            <div class="error-icon">!</div>
+            <p class="error-message">${message}</p>
+        </div>
+    `;
+}
+
+function renderEmpty(message) {
+    articlesGrid.innerHTML = `
+        <div class="empty-state" style="grid-column: 1 / -1;">
+            <div class="empty-icon">-</div>
+            <p>${message}</p>
+        </div>
+    `;
+}
+
+function renderArticles(articles) {
+    if (!articles || articles.length === 0) {
+        renderEmpty('暂无文章');
         return;
     }
 
-    const currentDateStr = formatDate(currentDate);
-    listContainer.innerHTML = `
-        <ul class="brief-list">
-            ${briefsList.map(brief => `
-                <li class="brief-item ${brief.date === currentDateStr ? 'active' : ''}"
-                    data-date="${brief.date}">
-                    <span class="brief-item-title">${escapeHtml(brief.title)}</span>
-                    <span class="brief-item-date">${brief.date}</span>
-                </li>
-            `).join('')}
-        </ul>
-    `;
+    articlesGrid.innerHTML = articles.map(article => `
+        <article class="article-card" data-id="${article.id || ''}" data-source="${article.source || ''}" onclick="openArticleDetail('${article.link || ''}', '${escapeHtml(article.title)}')">
+            <span class="article-category ${getCategoryClass(article.source || article.category)}">${getCategoryLabel(article.source || article.category)}</span>
+            <h3 class="article-title">${escapeHtml(article.title)}</h3>
+            <div class="article-source">${article.source || 'Unknown'}</div>
+            <p class="article-summary">${escapeHtml(article.summary || '')}</p>
+            <div class="article-footer">
+                <span class="article-date">${article.published || ''}</span>
+                <span class="read-more">查看详情 →</span>
+            </div>
+        </article>
+    `).join('');
 
-    // Add click handlers
-    document.querySelectorAll('.brief-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const date = item.dataset.date;
-            currentDate = new Date(date);
-            updateDatePicker();
-            fetchBriefByDate(date);
+    sourceCount.textContent = articles.length;
+}
+
+function filterArticles() {
+    let filtered = articlesData;
+
+    // Category filter
+    if (currentCategory !== 'all') {
+        filtered = filtered.filter(a => {
+            const source = (a.source || '').toLowerCase();
+            const category = (a.category || '').toLowerCase();
+            return source === currentCategory.toLowerCase() || category === currentCategory.toLowerCase();
         });
-    });
+    }
+
+    // Search filter
+    if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(a =>
+            (a.title || '').toLowerCase().includes(query) ||
+            (a.summary || '').toLowerCase().includes(query)
+        );
+    }
+
+    renderArticles(filtered);
 }
 
-// Update date picker and navigation buttons
-function updateDatePicker() {
-    const dateStr = formatDate(currentDate);
-    datePicker.value = dateStr;
-    currentDateDisplay.textContent = formatDateDisplay(dateStr);
-
-    const today = formatDate(new Date());
-    nextDayBtn.disabled = dateStr >= today;
+// Modal Functions
+function openModal() {
+    articleModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
-// Fetch brief by date
+function closeModal() {
+    articleModal.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+async function openArticleDetail(link, title) {
+    articleDetail.innerHTML = `
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>加载详情...</p>
+        </div>
+    `;
+    openModal();
+
+    // For now, show article info directly
+    // TODO: Fetch actual detail from API when implemented
+    articleDetail.innerHTML = `
+        <header class="detail-header">
+            <h2 class="detail-title">${title}</h2>
+            <div class="detail-meta">
+                <a href="${link}" target="_blank" rel="noopener">查看原文</a>
+            </div>
+        </header>
+        <section class="content-section">
+            <p>详细内容正在生成中，请稍后刷新页面查看完整的中文摘要和核心观点。</p>
+            <p style="margin-top: 1rem; color: var(--text-secondary);">
+                原文链接: <a href="${link}" target="_blank" rel="noopener" style="color: var(--accent);">${link}</a>
+            </p>
+        </section>
+        <div class="detail-actions">
+            <a href="${link}" target="_blank" rel="noopener" class="btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/>
+                    <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+                查看原文
+            </a>
+            <button class="btn-secondary" onclick="closeModal()">关闭</button>
+        </div>
+    `;
+}
+
+// API Functions
 async function fetchBriefByDate(date) {
-    renderLoading(briefContent);
+    renderLoading();
 
     try {
         const response = await fetch(`${API_BASE}/${date}`);
         if (!response.ok) {
             if (response.status === 404) {
-                renderEmpty(briefContent, '该日期暂无简报');
+                renderEmpty('该日期暂无简报');
                 return;
             }
             throw new Error('加载失败');
         }
 
         const data = await response.json();
-        renderBriefContent(data);
+        briefTitle.textContent = data.title || `AI Daily Brief - ${date}`;
 
-        // Update active state in list
-        document.querySelectorAll('.brief-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.date === date);
-        });
+        // Parse content to get articles
+        // For now, we'll fetch the raw brief content
+        articlesData = parseBriefContent(data.content);
+        filterArticles();
+
     } catch (e) {
-        renderError(briefContent, e.message, () => fetchBriefByDate(date));
+        renderError(e.message);
     }
 }
 
-// Fetch latest brief
 async function fetchLatestBrief() {
-    renderLoading(briefContent);
+    renderLoading();
 
     try {
         const response = await fetch(`${API_BASE}/latest`);
@@ -211,41 +253,58 @@ async function fetchLatestBrief() {
         const data = await response.json();
         currentDate = new Date(data.date);
         updateDatePicker();
-        renderBriefContent(data);
+        briefTitle.textContent = data.title;
 
-        // Update active state in list
-        document.querySelectorAll('.brief-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.date === data.date);
-        });
+        articlesData = parseBriefContent(data.content);
+        filterArticles();
+
     } catch (e) {
-        renderError(briefContent, e.message, fetchLatestBrief);
+        renderError(e.message);
     }
 }
 
-// Fetch brief list
-async function fetchBriefList() {
-    renderLoading(listContainer);
+function parseBriefContent(content) {
+    // Parse HTML content to extract articles
+    const articles = [];
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
 
-    try {
-        const response = await fetch(`${API_BASE}/list`);
-        if (!response.ok) {
-            throw new Error('加载失败');
+    // Extract from h3 sections
+    const sections = tempDiv.querySelectorAll('h3');
+    sections.forEach(section => {
+        const sourceName = section.textContent;
+        const ul = section.nextElementSibling;
+        if (ul && ul.tagName === 'UL') {
+            const items = ul.querySelectorAll('li');
+            items.forEach(item => {
+                const link = item.querySelector('a');
+                const summaryP = item.querySelector('p');
+                articles.push({
+                    title: link ? link.textContent : item.textContent,
+                    link: link ? link.href : '',
+                    summary: summaryP ? summaryP.textContent : '',
+                    source: sourceName,
+                    category: getCategoryClass(sourceName)
+                });
+            });
         }
+    });
 
-        const data = await response.json();
-        renderBriefList(data);
-    } catch (e) {
-        renderError(listContainer, e.message, fetchBriefList);
-    }
+    return articles;
 }
 
-// Navigate date
+// Navigation Functions
+function updateDatePicker() {
+    const dateStr = formatDate(currentDate);
+    datePicker.value = dateStr;
+    nextDayBtn.disabled = dateStr >= formatDate(new Date());
+}
+
 function navigateDate(delta) {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + delta);
 
-    const today = new Date();
-    if (newDate > today) {
+    if (newDate > new Date()) {
         showToast('不能查看未来的简报', 'warning');
         return;
     }
@@ -255,48 +314,62 @@ function navigateDate(delta) {
     fetchBriefByDate(formatDate(currentDate));
 }
 
-// Go to today
 function goToToday() {
     currentDate = new Date();
     updateDatePicker();
     fetchBriefByDate(formatDate(currentDate));
 }
 
-// Event Listeners
+// Event Handlers
 prevDayBtn.addEventListener('click', () => navigateDate(-1));
 nextDayBtn.addEventListener('click', () => navigateDate(1));
 todayBtn.addEventListener('click', goToToday);
 
 datePicker.addEventListener('change', (e) => {
     const selectedDate = new Date(e.target.value);
-    const today = new Date();
-
-    if (selectedDate > today) {
+    if (selectedDate > new Date()) {
         showToast('不能查看未来的简报', 'warning');
         datePicker.value = formatDate(currentDate);
         return;
     }
-
     currentDate = selectedDate;
     fetchBriefByDate(e.target.value);
 });
 
-// Keyboard navigation
-document.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT') return;
+searchInput.addEventListener('input', (e) => {
+    searchQuery = e.target.value;
+    filterArticles();
+});
 
-    if (e.key === 'ArrowLeft') {
-        navigateDate(-1);
-    } else if (e.key === 'ArrowRight') {
-        navigateDate(1);
-    } else if (e.key === 't' || e.key === 'T') {
-        goToToday();
+categoryTabs.addEventListener('click', (e) => {
+    if (e.target.classList.contains('tab-btn')) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+        currentCategory = e.target.dataset.category;
+        filterArticles();
     }
 });
 
-// Initialize on page load
+modalClose.addEventListener('click', closeModal);
+articleModal.addEventListener('click', (e) => {
+    if (e.target === articleModal) closeModal();
+});
+
+themeToggle.addEventListener('click', toggleTheme);
+
+// Keyboard Navigation
+document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+
+    if (e.key === 'ArrowLeft') navigateDate(-1);
+    else if (e.key === 'ArrowRight') navigateDate(1);
+    else if (e.key === 't' || e.key === 'T') goToToday();
+    else if (e.key === 'Escape') closeModal();
+});
+
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     updateDatePicker();
     fetchLatestBrief();
-    fetchBriefList();
 });

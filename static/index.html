@@ -5,61 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Daily Brief - 每日AI简报</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <meta name="description" content="每日AI领域动态精选 - 新闻、论文、开源项目一站式追踪">
 </head>
 <body>
-    <header>
-        <h1>AI Daily Brief</h1>
-        <p>每日AI领域动态精选</p>
-    </header>
-
-    <main>
-        <!-- 日期导航 -->
-        <nav class="date-nav" id="date-nav">
-            <button class="nav-btn" id="prev-day" title="前一天">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M15 18l-6-6 6-6"/>
-                </svg>
-            </button>
-            <div class="date-picker-wrapper">
-                <input type="date" id="date-picker" class="date-picker">
-                <span id="current-date-display"></span>
-            </div>
-            <button class="nav-btn" id="next-day" title="后一天">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 18l6-6-6-6"/>
-                </svg>
-            </button>
-            <button class="nav-btn today-btn" id="today-btn">今天</button>
-        </nav>
-
-        <!-- 简报详情区 -->
-        <section id="brief-detail">
-            <div id="brief-content">
-                <div class="loading-state">
-                    <div class="spinner"></div>
-                    <p>加载中...</p>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>AI Daily Brief</h1>
+                    <p class="tagline">每日AI领域动态精选</p>
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" id="theme-toggle" aria-label="切换主题">
+                        <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        </svg>
+                        <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
-        </section>
+        </header>
 
-        <!-- 历史简报列表 -->
-        <section id="brief-list">
-            <h2>历史简报</h2>
-            <div id="list-container">
-                <div class="loading-state">
-                    <div class="spinner"></div>
-                    <p>加载中...</p>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Date Navigation Bar -->
+            <nav class="date-nav" id="date-nav">
+                <button class="nav-btn" id="prev-day" title="前一天 (←)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                </button>
+                <div class="date-picker-wrapper">
+                    <input type="date" id="date-picker" class="date-picker">
+                    <span id="current-date-display" class="date-display"></span>
                 </div>
+                <button class="nav-btn" id="next-day" title="后一天 (→)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                </button>
+                <button class="nav-btn today-btn" id="today-btn">今天</button>
+            </nav>
+
+            <!-- Brief Header -->
+            <section class="brief-header" id="brief-header">
+                <h2 class="brief-title" id="brief-title">加载中...</h2>
+                <div class="brief-meta" id="brief-meta">
+                    <span class="source-count"><span id="source-count">0</span> 条精选</span>
+                </div>
+            </section>
+
+            <!-- Search & Filters -->
+            <section class="controls">
+                <div class="search-box">
+                    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="search-input" placeholder="搜索文章..." class="search-input">
+                </div>
+                <div class="category-tabs" id="category-tabs">
+                    <button class="tab-btn active" data-category="all">全部</button>
+                    <button class="tab-btn" data-category="anthropic">Anthropic</button>
+                    <button class="tab-btn" data-category="openai">OpenAI</button>
+                    <button class="tab-btn" data-category="deepmind">DeepMind</button>
+                    <button class="tab-btn" data-category="arxiv">arXiv</button>
+                    <button class="tab-btn" data-category="github">GitHub</button>
+                    <button class="tab-btn" data-category="huggingface">HuggingFace</button>
+                </div>
+            </section>
+
+            <!-- Articles Grid -->
+            <section class="articles-section">
+                <div class="articles-grid" id="articles-grid">
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <p>加载中...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Article Detail Modal -->
+        <div class="modal-overlay" id="article-modal">
+            <div class="modal-content">
+                <button class="modal-close" id="modal-close" aria-label="关闭">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+                <article class="article-detail" id="article-detail">
+                    <!-- Dynamic content -->
+                </article>
             </div>
-        </section>
-    </main>
+        </div>
 
-    <!-- Toast 通知 -->
-    <div id="toast" class="toast hidden"></div>
+        <!-- Toast Notification -->
+        <div id="toast" class="toast hidden"></div>
 
-    <footer>
-        <p>Powered by FastAPI + LanceDB</p>
-    </footer>
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Powered by FastAPI + LanceDB | <a href="https://github.com" target="_blank" rel="noopener">GitHub</a></p>
+        </footer>
+    </div>
 
     <script src="/static/js/app.js"></script>
 </body>

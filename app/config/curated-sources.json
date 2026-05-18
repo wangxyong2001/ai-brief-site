@@ -1,0 +1,193 @@
+{
+  "version": "4.0.0",
+  "last_updated": "2026-05-19",
+  "description": "精选信源配置 - Tier 1-3 分级",
+
+  "tier_1_core": [
+    {
+      "id": "openai-news",
+      "name": "OpenAI News",
+      "url": "https://openai.com/news/rss.xml",
+      "category": "product",
+      "weight": 10,
+      "language": "en",
+      "fetch_method": "rss",
+      "priority": "P0",
+      "description": "OpenAI 官方新闻和更新"
+    },
+    {
+      "id": "anthropic-news",
+      "name": "Anthropic News",
+      "url": "https://www.anthropic.com/news",
+      "category": "product",
+      "weight": 10,
+      "language": "en",
+      "fetch_method": "web_fetch",
+      "priority": "P0",
+      "description": "Claude 和 Anthropic 产品更新"
+    },
+    {
+      "id": "huggingface-blog",
+      "name": "Hugging Face Blog",
+      "url": "https://huggingface.co/blog",
+      "category": "opensource",
+      "weight": 9,
+      "language": "en",
+      "fetch_method": "web_fetch",
+      "priority": "P0",
+      "description": "开源 AI 模型和工具生态"
+    },
+    {
+      "id": "jiqizhixin",
+      "name": "机器之心",
+      "url": "https://www.jiqizhixin.com/rss",
+      "category": "news",
+      "weight": 9,
+      "language": "zh",
+      "fetch_method": "rss",
+      "priority": "P0",
+      "description": "中文 AI 媒体龙头"
+    },
+    {
+      "id": "arxiv-cs-ai",
+      "name": "arXiv cs.AI",
+      "url": "https://export.arxiv.org/rss/cs.AI",
+      "category": "research",
+      "weight": 8,
+      "language": "en",
+      "fetch_method": "rss",
+      "priority": "P0",
+      "description": "AI 领域最新论文"
+    }
+  ],
+
+  "tier_2_important": [
+    {
+      "id": "techcrunch-ai",
+      "name": "TechCrunch AI",
+      "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+      "category": "news",
+      "weight": 7,
+      "language": "en",
+      "fetch_method": "rss",
+      "priority": "P1",
+      "description": "科技新闻龙头"
+    },
+    {
+      "id": "mit-tech-review",
+      "name": "MIT Tech Review",
+      "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
+      "category": "news",
+      "weight": 7,
+      "language": "en",
+      "fetch_method": "rss",
+      "priority": "P1",
+      "description": "MIT 科技评论 AI 板块"
+    },
+    {
+      "id": "qbitai",
+      "name": "量子位",
+      "url": "https://www.qbitai.com/feed",
+      "category": "news",
+      "weight": 7,
+      "language": "zh",
+      "fetch_method": "rss",
+      "priority": "P1",
+      "description": "中文科技媒体"
+    },
+    {
+      "id": "langchain-blog",
+      "name": "LangChain Blog",
+      "url": "https://blog.langchain.dev/feed",
+      "category": "opensource",
+      "weight": 6,
+      "language": "en",
+      "fetch_method": "rss",
+      "priority": "P1",
+      "description": "Agent 开发框架"
+    },
+    {
+      "id": "llamaindex-blog",
+      "name": "LlamaIndex Blog",
+      "url": "https://www.llamaindex.ai/blog",
+      "category": "opensource",
+      "weight": 6,
+      "language": "en",
+      "fetch_method": "web_fetch",
+      "priority": "P1",
+      "description": "RAG 和 Agent 框架"
+    }
+  ],
+
+  "tier_3_github": [
+    {
+      "id": "vllm-releases",
+      "name": "vLLM Releases",
+      "repo": "vllm-project/vllm",
+      "category": "opensource",
+      "weight": 8,
+      "fetch_method": "github_api",
+      "priority": "P1",
+      "description": "大模型推理引擎"
+    },
+    {
+      "id": "ollama-releases",
+      "name": "Ollama Releases",
+      "repo": "ollama/ollama",
+      "category": "opensource",
+      "weight": 8,
+      "fetch_method": "github_api",
+      "priority": "P1",
+      "description": "本地大模型运行"
+    },
+    {
+      "id": "openclaw-releases",
+      "name": "OpenClaw Releases",
+      "repo": "openclaw/openclaw",
+      "category": "opensource",
+      "weight": 7,
+      "fetch_method": "github_api",
+      "priority": "P2",
+      "description": "OpenClaw 更新"
+    }
+  ],
+
+  "categories": {
+    "product": {
+      "name": "产品动态",
+      "description": "AI 公司和产品更新",
+      "icon": "🚀"
+    },
+    "opensource": {
+      "name": "开源项目",
+      "description": "开源工具和框架更新",
+      "icon": "💻"
+    },
+    "research": {
+      "name": "学术研究",
+      "description": "最新论文和研究成果",
+      "icon": "🔬"
+    },
+    "news": {
+      "name": "行业新闻",
+      "description": "AI 行业动态和趋势",
+      "icon": "📰"
+    }
+  },
+
+  "scoring": {
+    "source_weight": {
+      "tier_1": 10,
+      "tier_2": 7,
+      "tier_3": 5
+    },
+    "freshness": {
+      "less_than_6h": 3,
+      "less_than_24h": 2,
+      "less_than_48h": 1,
+      "older": 0
+    },
+    "multi_source_bonus": 5,
+    "category_diversity_bonus": 3
+  }
+}
