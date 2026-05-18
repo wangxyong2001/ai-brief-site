@@ -185,63 +185,118 @@ function openArticleDetail(index) {
     const article = articlesData[index];
     if (!article) return;
 
-    // 构建详情内容
-    const detailHtml = `
-        <header class="detail-header">
-            <span class="article-category ${getCategoryClass(article.source)}">${getCategoryLabel(article.source)}</span>
-            <h2 class="detail-title">${escapeHtml(article.title)}</h2>
-            <div class="detail-meta">
-                <span>来源: ${escapeHtml(article.source)}</span>
-                ${article.published ? `<span class="separator">·</span><span>${escapeHtml(article.published)}</span>` : ''}
-            </div>
-        </header>
-
-        <section class="content-section">
-            <h3 class="section-title">文章摘要</h3>
-            <p>${escapeHtml(article.summary || '暂无摘要')}</p>
-        </section>
-
-        ${article['核心观点'] ? `
-        <section class="content-section">
-            <h3 class="section-title">核心观点</h3>
-            <p>${escapeHtml(article['核心观点'])}</p>
-        </section>
-        ` : ''}
-
-        ${article['技术要点'] ? `
-        <section class="content-section">
-            <h3 class="section-title">技术要点</h3>
-            <p>${escapeHtml(article['技术要点'])}</p>
-        </section>
-        ` : ''}
-
-        ${article['中文摘要'] ? `
-        <section class="content-section">
-            <h3 class="section-title">中文摘要</h3>
-            <p>${escapeHtml(article['中文摘要'])}</p>
-        </section>
-        ` : `
-        <section class="content-section">
-            <h3 class="section-title">提示</h3>
-            <p style="color: var(--text-secondary);">配置GLM API后，将自动生成中文摘要、核心观点、技术要点等内容。</p>
-        </section>
-        `}
-
-        <div class="detail-actions">
-            <a href="${escapeHtml(article.link)}" target="_blank" rel="noopener" class="btn-primary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                    <polyline points="15 3 21 3 21 9"/>
-                    <line x1="10" y1="14" x2="21" y2="3"/>
-                </svg>
-                查看原文
-            </a>
-            <button class="btn-secondary" onclick="closeModal()">关闭</button>
+    // 首先显示基本信息
+    articleDetail.innerHTML = `
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>加载详细内容...</p>
         </div>
     `;
-
-    articleDetail.innerHTML = detailHtml;
     openModal();
+
+    // 然后调用API获取完整详情
+    const articleId = article.id || index + 1;
+    fetch(`/api/articles/${articleId}`)
+        .then(res => res.json())
+        .then(data => {
+            // 解析核心观点（可能是JSON字符串）
+            let keyPointsList = '';
+            if (data.key_points) {
+                try {
+                    const points = JSON.parse(data.key_points);
+                    keyPointsList = points.map(p => `<li>${escapeHtml(p)}</li>`).join('');
+                } catch(e) {
+                    keyPointsList = `<li>${escapeHtml(data.key_points)}</li>`;
+                }
+            }
+
+            const detailHtml = `
+                <header class="detail-header">
+                    <span class="article-category">${getCategoryLabel(data.source_name)}</span>
+                    <h2 class="detail-title">${escapeHtml(data.chinese_title || data.original_title)}</h2>
+                    <div class="detail-meta">
+                        <span>来源: ${escapeHtml(data.source_name)}</span>
+                        ${data.published_at ? `<span class="separator">·</span><span>${escapeHtml(data.published_at)}</span>` : ''}
+                    </div>
+                </header>
+
+                ${keyPointsList ? `
+                <section class="content-section">
+                    <h3 class="section-title">核心观点</h3>
+                    <ul class="key-points-list">${keyPointsList}</ul>
+                </section>
+                ` : ''}
+
+                ${data.tech_points ? `
+                <section class="content-section">
+                    <h3 class="section-title">技术要点</h3>
+                    <p>${escapeHtml(data.tech_points)}</p>
+                </section>
+                ` : ''}
+
+                ${data.use_cases ? `
+                <section class="content-section">
+                    <h3 class="section-title">应用场景</h3>
+                    <p>${escapeHtml(data.use_cases)}</p>
+                </section>
+                ` : ''}
+
+                ${data.industry_impact ? `
+                <section class="content-section">
+                    <h3 class="section-title">行业影响</h3>
+                    <p>${escapeHtml(data.industry_impact)}</p>
+                </section>
+                ` : ''}
+
+                ${data.chinese_summary ? `
+                <section class="content-section">
+                    <h3 class="section-title">详细总结</h3>
+                    <div style="white-space: pre-wrap;">${escapeHtml(data.chinese_summary)}</div>
+                </section>
+                ` : `
+                <section class="content-section">
+                    <h3 class="section-title">原文摘要</h3>
+                    <p>${escapeHtml(article.summary || '暂无内容')}</p>
+                </section>
+                `}
+
+                <div class="detail-actions">
+                    <a href="${escapeHtml(data.original_link)}" target="_blank" rel="noopener" class="btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            <polyline points="15 3 21 3 21 9"/>
+                            <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                        查看原文
+                    </a>
+                    <button class="btn-secondary" onclick="closeModal()">关闭</button>
+                </div>
+            `;
+            articleDetail.innerHTML = detailHtml;
+        })
+        .catch(err => {
+            // 如果API失败，显示基本信息
+            const detailHtml = `
+                <header class="detail-header">
+                    <span class="article-category ${getCategoryClass(article.source)}">${getCategoryLabel(article.source)}</span>
+                    <h2 class="detail-title">${escapeHtml(article.title)}</h2>
+                    <div class="detail-meta">
+                        <span>来源: ${escapeHtml(article.source)}</span>
+                    </div>
+                </header>
+
+                <section class="content-section">
+                    <h3 class="section-title">文章摘要</h3>
+                    <p>${escapeHtml(article.summary || '暂无摘要')}</p>
+                </section>
+
+                <div class="detail-actions">
+                    <a href="${escapeHtml(article.link)}" target="_blank" rel="noopener" class="btn-primary">查看原文</a>
+                    <button class="btn-secondary" onclick="closeModal()">关闭</button>
+                </div>
+            `;
+            articleDetail.innerHTML = detailHtml;
+        });
 }
 
 // API Functions
