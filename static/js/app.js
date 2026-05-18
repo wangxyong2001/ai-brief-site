@@ -1,4 +1,4 @@
-// AI Daily Brief Frontend App - Modern UI
+// AI Daily Brief Frontend App - Modern UI with working filters
 const API_BASE = '/api/brief';
 
 // State
@@ -54,12 +54,14 @@ function showToast(message, type = 'info') {
 }
 
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
 function getCategoryClass(category) {
+    const cat = (category || '').toLowerCase();
     const map = {
         'product': 'product',
         'opensource': 'opensource',
@@ -68,14 +70,15 @@ function getCategoryClass(category) {
         'anthropic': 'product',
         'openai': 'product',
         'deepmind': 'product',
+        'huggingface': 'opensource',
         'arxiv': 'research',
-        'github': 'opensource',
-        'huggingface': 'opensource'
+        'github': 'opensource'
     };
-    return map[category.toLowerCase()] || 'news';
+    return map[cat] || 'news';
 }
 
 function getCategoryLabel(category) {
+    const cat = (category || '').toLowerCase();
     const map = {
         'product': '产品动态',
         'opensource': '开源项目',
@@ -86,9 +89,10 @@ function getCategoryLabel(category) {
         'deepmind': 'DeepMind',
         'arxiv': 'arXiv',
         'github': 'GitHub',
-        'huggingface': 'Hugging Face'
+        'huggingface': 'Hugging Face',
+        'other': '其他'
     };
-    return map[category.toLowerCase()] || category;
+    return map[cat] || cat;
 }
 
 // Render Functions
@@ -105,7 +109,7 @@ function renderError(message) {
     articlesGrid.innerHTML = `
         <div class="error-state" style="grid-column: 1 / -1;">
             <div class="error-icon">!</div>
-            <p class="error-message">${message}</p>
+            <p class="error-message">${escapeHtml(message)}</p>
         </div>
     `;
 }
@@ -114,25 +118,27 @@ function renderEmpty(message) {
     articlesGrid.innerHTML = `
         <div class="empty-state" style="grid-column: 1 / -1;">
             <div class="empty-icon">-</div>
-            <p>${message}</p>
+            <p>${escapeHtml(message)}</p>
         </div>
     `;
 }
 
 function renderArticles(articles) {
     if (!articles || articles.length === 0) {
-        renderEmpty('暂无文章');
+        renderEmpty('暂无文章，请稍后再试');
         return;
     }
 
-    articlesGrid.innerHTML = articles.map(article => `
-        <article class="article-card" data-id="${article.id || ''}" data-source="${article.source || ''}" onclick="openArticleDetail('${article.link || ''}', '${escapeHtml(article.title)}')">
-            <span class="article-category ${getCategoryClass(article.source || article.category)}">${getCategoryLabel(article.source || article.category)}</span>
+    articlesGrid.innerHTML = articles.map((article, index) => `
+        <article class="article-card"
+                 data-index="${index}"
+                 onclick="openArticleDetail(${index})">
+            <span class="article-category ${getCategoryClass(article.source)}">${getCategoryLabel(article.source)}</span>
             <h3 class="article-title">${escapeHtml(article.title)}</h3>
-            <div class="article-source">${article.source || 'Unknown'}</div>
-            <p class="article-summary">${escapeHtml(article.summary || '')}</p>
+            <div class="article-source">${escapeHtml(article.source)}</div>
+            <p class="article-summary">${escapeHtml(article.summary || '点击查看详情')}</p>
             <div class="article-footer">
-                <span class="article-date">${article.published || ''}</span>
+                <span class="article-date">${escapeHtml(article.published || '')}</span>
                 <span class="read-more">查看详情 →</span>
             </div>
         </article>
@@ -141,15 +147,14 @@ function renderArticles(articles) {
     sourceCount.textContent = articles.length;
 }
 
-function filterArticles() {
+function filterAndRender() {
     let filtered = articlesData;
 
-    // Category filter
+    // Category filter - 实际过滤
     if (currentCategory !== 'all') {
         filtered = filtered.filter(a => {
             const source = (a.source || '').toLowerCase();
-            const category = (a.category || '').toLowerCase();
-            return source === currentCategory.toLowerCase() || category === currentCategory.toLowerCase();
+            return source.includes(currentCategory.toLowerCase());
         });
     }
 
@@ -176,32 +181,54 @@ function closeModal() {
     document.body.style.overflow = '';
 }
 
-async function openArticleDetail(link, title) {
-    articleDetail.innerHTML = `
-        <div class="loading-state">
-            <div class="spinner"></div>
-            <p>加载详情...</p>
-        </div>
-    `;
-    openModal();
+function openArticleDetail(index) {
+    const article = articlesData[index];
+    if (!article) return;
 
-    // For now, show article info directly
-    // TODO: Fetch actual detail from API when implemented
-    articleDetail.innerHTML = `
+    // 构建详情内容
+    const detailHtml = `
         <header class="detail-header">
-            <h2 class="detail-title">${title}</h2>
+            <span class="article-category ${getCategoryClass(article.source)}">${getCategoryLabel(article.source)}</span>
+            <h2 class="detail-title">${escapeHtml(article.title)}</h2>
             <div class="detail-meta">
-                <a href="${link}" target="_blank" rel="noopener">查看原文</a>
+                <span>来源: ${escapeHtml(article.source)}</span>
+                ${article.published ? `<span class="separator">·</span><span>${escapeHtml(article.published)}</span>` : ''}
             </div>
         </header>
+
         <section class="content-section">
-            <p>详细内容正在生成中，请稍后刷新页面查看完整的中文摘要和核心观点。</p>
-            <p style="margin-top: 1rem; color: var(--text-secondary);">
-                原文链接: <a href="${link}" target="_blank" rel="noopener" style="color: var(--accent);">${link}</a>
-            </p>
+            <h3 class="section-title">文章摘要</h3>
+            <p>${escapeHtml(article.summary || '暂无摘要')}</p>
         </section>
+
+        ${article['核心观点'] ? `
+        <section class="content-section">
+            <h3 class="section-title">核心观点</h3>
+            <p>${escapeHtml(article['核心观点'])}</p>
+        </section>
+        ` : ''}
+
+        ${article['技术要点'] ? `
+        <section class="content-section">
+            <h3 class="section-title">技术要点</h3>
+            <p>${escapeHtml(article['技术要点'])}</p>
+        </section>
+        ` : ''}
+
+        ${article['中文摘要'] ? `
+        <section class="content-section">
+            <h3 class="section-title">中文摘要</h3>
+            <p>${escapeHtml(article['中文摘要'])}</p>
+        </section>
+        ` : `
+        <section class="content-section">
+            <h3 class="section-title">提示</h3>
+            <p style="color: var(--text-secondary);">配置GLM API后，将自动生成中文摘要、核心观点、技术要点等内容。</p>
+        </section>
+        `}
+
         <div class="detail-actions">
-            <a href="${link}" target="_blank" rel="noopener" class="btn-primary">
+            <a href="${escapeHtml(article.link)}" target="_blank" rel="noopener" class="btn-primary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
                     <polyline points="15 3 21 3 21 9"/>
@@ -212,6 +239,9 @@ async function openArticleDetail(link, title) {
             <button class="btn-secondary" onclick="closeModal()">关闭</button>
         </div>
     `;
+
+    articleDetail.innerHTML = detailHtml;
+    openModal();
 }
 
 // API Functions
@@ -222,7 +252,8 @@ async function fetchBriefByDate(date) {
         const response = await fetch(`${API_BASE}/${date}`);
         if (!response.ok) {
             if (response.status === 404) {
-                renderEmpty('该日期暂无简报');
+                renderEmpty(`该日期 (${date}) 暂无简报`);
+                briefTitle.textContent = `AI Daily Brief - ${date}`;
                 return;
             }
             throw new Error('加载失败');
@@ -231,10 +262,9 @@ async function fetchBriefByDate(date) {
         const data = await response.json();
         briefTitle.textContent = data.title || `AI Daily Brief - ${date}`;
 
-        // Parse content to get articles
-        // For now, we'll fetch the raw brief content
+        // Parse HTML content to get articles
         articlesData = parseBriefContent(data.content);
-        filterArticles();
+        filterAndRender();
 
     } catch (e) {
         renderError(e.message);
@@ -247,7 +277,16 @@ async function fetchLatestBrief() {
     try {
         const response = await fetch(`${API_BASE}/latest`);
         if (!response.ok) {
-            throw new Error('暂无简报');
+            if (response.status === 404) {
+                // Try to generate a brief
+                const genResponse = await fetch(`${API_BASE}/generate`, { method: 'POST' });
+                if (genResponse.ok) {
+                    showToast('正在生成简报，请稍候...', 'info');
+                    setTimeout(() => fetchLatestBrief(), 30000);
+                    return;
+                }
+            }
+            throw new Error('暂无简报，请稍后再试');
         }
 
         const data = await response.json();
@@ -256,7 +295,7 @@ async function fetchLatestBrief() {
         briefTitle.textContent = data.title;
 
         articlesData = parseBriefContent(data.content);
-        filterArticles();
+        filterAndRender();
 
     } catch (e) {
         renderError(e.message);
@@ -272,17 +311,34 @@ function parseBriefContent(content) {
     // Extract from h3 sections
     const sections = tempDiv.querySelectorAll('h3');
     sections.forEach(section => {
-        const sourceName = section.textContent;
+        const sourceName = section.textContent.trim();
         const ul = section.nextElementSibling;
         if (ul && ul.tagName === 'UL') {
             const items = ul.querySelectorAll('li');
             items.forEach(item => {
                 const link = item.querySelector('a');
                 const summaryP = item.querySelector('p');
+                const summaryText = summaryP ? summaryP.textContent : '';
+
+                // 尝试提取更多信息
+                let summary = '';
+                let keyPoints = '';
+
+                if (summaryText.includes('摘要:')) {
+                    const parts = summaryText.split('核心观点:');
+                    summary = parts[0].replace('摘要:', '').trim();
+                    if (parts.length > 1) {
+                        keyPoints = parts[1].trim();
+                    }
+                } else {
+                    summary = summaryText;
+                }
+
                 articles.push({
                     title: link ? link.textContent : item.textContent,
                     link: link ? link.href : '',
-                    summary: summaryP ? summaryP.textContent : '',
+                    summary: summary,
+                    '核心观点': keyPoints,
                     source: sourceName,
                     category: getCategoryClass(sourceName)
                 });
@@ -338,15 +394,23 @@ datePicker.addEventListener('change', (e) => {
 
 searchInput.addEventListener('input', (e) => {
     searchQuery = e.target.value;
-    filterArticles();
+    filterAndRender();
 });
 
 categoryTabs.addEventListener('click', (e) => {
     if (e.target.classList.contains('tab-btn')) {
+        // 更新active状态
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         e.target.classList.add('active');
+
+        // 更新过滤条件并重新渲染
         currentCategory = e.target.dataset.category;
-        filterArticles();
+        filterAndRender();
+
+        // 显示toast通知
+        if (currentCategory !== 'all') {
+            showToast(`筛选: ${getCategoryLabel(currentCategory)}`, 'info');
+        }
     }
 });
 
