@@ -1,0 +1,470 @@
+/* AI Daily Brief Styles */
+:root {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e1b4b;
+    --bg-card: rgba(255, 255, 255, 0.05);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent: #38bdf8;
+    --accent-hover: #7dd3fc;
+    --border: rgba(255, 255, 255, 0.1);
+    --error: #ef4444;
+    --success: #22c55e;
+    --warning: #f59e0b;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+/* Header */
+header {
+    text-align: center;
+    padding: 2rem 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--accent) 0%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+header p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* Main Content */
+main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+}
+
+/* Date Navigation */
+.date-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.today-btn {
+    width: auto;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+}
+
+.date-picker-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.date-picker {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.date-picker:hover,
+.date-picker:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+#current-date-display {
+    display: none;
+}
+
+/* Brief Detail Section */
+#brief-detail {
+    margin-bottom: 2rem;
+}
+
+#brief-content {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    min-height: 200px;
+}
+
+#brief-content .brief-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+#brief-content .brief-date {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+#brief-content .brief-body {
+    line-height: 1.8;
+}
+
+#brief-content .brief-body h1,
+#brief-content .brief-body h2,
+#brief-content .brief-body h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--accent);
+}
+
+#brief-content .brief-body h1 { font-size: 1.25rem; }
+#brief-content .brief-body h2 { font-size: 1.1rem; }
+#brief-content .brief-body h3 { font-size: 1rem; }
+
+#brief-content .brief-body p {
+    margin-bottom: 1rem;
+}
+
+#brief-content .brief-body ul,
+#brief-content .brief-body ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+#brief-content .brief-body li {
+    margin-bottom: 0.5rem;
+}
+
+#brief-content .brief-body a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+#brief-content .brief-body a:hover {
+    text-decoration: underline;
+}
+
+#brief-content .brief-body code {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 0.875em;
+}
+
+#brief-content .brief-body pre {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+#brief-content .brief-body blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px;
+    color: var(--text-secondary);
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 0.75rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Error State */
+.error-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--error);
+}
+
+.error-state .error-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.error-state .error-message {
+    margin-bottom: 1rem;
+}
+
+.error-state .retry-btn {
+    background: var(--error);
+    color: white;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: opacity 0.2s;
+}
+
+.error-state .retry-btn:hover {
+    opacity: 0.9;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.empty-state .empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.5;
+}
+
+/* Brief List Section */
+#brief-list {
+    margin-bottom: 2rem;
+}
+
+#brief-list h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#list-container {
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.brief-list {
+    list-style: none;
+}
+
+.brief-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.brief-item:last-child {
+    border-bottom: none;
+}
+
+.brief-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.brief-item.active {
+    background: rgba(56, 189, 248, 0.1);
+    border-left: 3px solid var(--accent);
+}
+
+.brief-item-title {
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.brief-item-date {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-left: 1rem;
+    white-space: nowrap;
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.toast.hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+    pointer-events: none;
+}
+
+.toast.error {
+    border-color: var(--error);
+    color: var(--error);
+}
+
+.toast.success {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border);
+    font-size: 0.875rem;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    header p {
+        font-size: 0.85rem;
+    }
+
+    main {
+        padding: 1rem 0.75rem;
+    }
+
+    .date-nav {
+        gap: 0.5rem;
+    }
+
+    .nav-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .today-btn {
+        padding: 0 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .date-picker {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    #brief-content {
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    #brief-content .brief-title {
+        font-size: 1.1rem;
+    }
+
+    .brief-item {
+        padding: 0.875rem 1rem;
+    }
+
+    .brief-item-title {
+        font-size: 0.875rem;
+    }
+
+    .brief-item-date {
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+    }
+
+    .toast {
+        bottom: 1rem;
+        left: 1rem;
+        right: 1rem;
+        transform: none;
+    }
+
+    .toast.hidden {
+        transform: translateY(20px);
+    }
+}
+
+@media (max-width: 400px) {
+    .date-nav {
+        flex-wrap: wrap;
+    }
+
+    .date-picker-wrapper {
+        order: -1;
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .date-picker {
+        width: 100%;
+        max-width: 200px;
+    }
+}

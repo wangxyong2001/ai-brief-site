@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Daily Brief - 每日AI简报</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>AI Daily Brief</h1>
+        <p>每日AI领域动态精选</p>
+    </header>
+
+    <main>
+        <!-- 日期导航 -->
+        <nav class="date-nav" id="date-nav">
+            <button class="nav-btn" id="prev-day" title="前一天">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            </button>
+            <div class="date-picker-wrapper">
+                <input type="date" id="date-picker" class="date-picker">
+                <span id="current-date-display"></span>
+            </div>
+            <button class="nav-btn" id="next-day" title="后一天">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            </button>
+            <button class="nav-btn today-btn" id="today-btn">今天</button>
+        </nav>
+
+        <!-- 简报详情区 -->
+        <section id="brief-detail">
+            <div id="brief-content">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>加载中...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 历史简报列表 -->
+        <section id="brief-list">
+            <h2>历史简报</h2>
+            <div id="list-container">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>加载中...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast 通知 -->
+    <div id="toast" class="toast hidden"></div>
+
+    <footer>
+        <p>Powered by FastAPI + LanceDB</p>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

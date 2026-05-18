@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  ai-brief-app:
+    build: .
+    container_name: ai-brief-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8000"  # Only expose to localhost, nginx will proxy
+    volumes:
+      - ./data:/app/data  # Persist database
+    environment:
+      - API_PORT=8000
+      - DEBUG=false
+      - GLM_API_KEY=${GLM_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "app=ai-brief"
+      - "version=0.4.0"
+
+# No external services needed - LanceDB and SQLite are embedded
