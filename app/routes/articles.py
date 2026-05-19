@@ -39,16 +39,16 @@ class ProcessRequest(BaseModel):
     category: str = "news"
 
 
-@router.get("/{article_id}")
-async def get_article_detail(article_id: int):
-    """Get processed article with Chinese summary"""
+@router.get("/by-link")
+async def get_article_by_link(url: str):
+    """Get article by original link URL"""
     with sqlite3.connect(SQLITE_PATH) as conn:
         cursor = conn.execute("""
             SELECT id, original_link, original_title, chinese_title,
                    source_name, category, key_points, tech_points,
                    use_cases, industry_impact, chinese_summary, published_at
-            FROM articles WHERE id = ?
-        """, (article_id,))
+            FROM articles WHERE original_link = ?
+        """, (url,))
         row = cursor.fetchone()
 
     if not row:
@@ -70,16 +70,16 @@ async def get_article_detail(article_id: int):
     )
 
 
-@router.get("/by-link")
-async def get_article_by_link(url: str):
-    """Get article by original link URL"""
+@router.get("/{article_id}")
+async def get_article_detail(article_id: int):
+    """Get processed article with Chinese summary"""
     with sqlite3.connect(SQLITE_PATH) as conn:
         cursor = conn.execute("""
             SELECT id, original_link, original_title, chinese_title,
                    source_name, category, key_points, tech_points,
                    use_cases, industry_impact, chinese_summary, published_at
-            FROM articles WHERE original_link = ?
-        """, (url,))
+            FROM articles WHERE id = ?
+        """, (article_id,))
         row = cursor.fetchone()
 
     if not row:
