@@ -42,6 +42,25 @@ class BriefResponse(BaseModel):
     source_count: int
     created_at: str
 
+@router.get("/sources")
+async def get_sources():
+    """Get distinct source names from articles for dynamic category tabs"""
+    conn = sqlite3.connect(SQLITE_PATH)
+    cursor = conn.execute("""
+        SELECT DISTINCT source_name, COUNT(*) as count
+        FROM articles
+        WHERE brief_id IS NOT NULL
+        GROUP BY source_name
+        ORDER BY count DESC
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+
+    return [
+        {"name": r[0], "count": r[1]}
+        for r in rows
+    ]
+
 @router.get("/latest")
 async def get_latest_brief():
     """Get the latest brief"""

@@ -70,6 +70,37 @@ async def get_article_detail(article_id: int):
     )
 
 
+@router.get("/by-link")
+async def get_article_by_link(url: str):
+    """Get article by original link URL"""
+    with sqlite3.connect(SQLITE_PATH) as conn:
+        cursor = conn.execute("""
+            SELECT id, original_link, original_title, chinese_title,
+                   source_name, category, key_points, tech_points,
+                   use_cases, industry_impact, chinese_summary, published_at
+            FROM articles WHERE original_link = ?
+        """, (url,))
+        row = cursor.fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    return ArticleDetail(
+        id=row[0],
+        original_link=row[1],
+        original_title=row[2],
+        chinese_title=row[3],
+        source_name=row[4],
+        category=row[5],
+        key_points=row[6],
+        tech_points=row[7],
+        use_cases=row[8],
+        industry_impact=row[9],
+        chinese_summary=row[10],
+        published_at=row[11]
+    )
+
+
 @router.get("/brief/{brief_id}")
 async def get_brief_articles(brief_id: int):
     """Get all articles for a brief"""

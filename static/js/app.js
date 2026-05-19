@@ -23,6 +23,9 @@ const modalClose = document.getElementById('modal-close');
 const toast = document.getElementById('toast');
 const themeToggle = document.getElementById('theme-toggle');
 
+// Dynamic Sources Cache
+let availableSources = [];
+
 // Theme Management
 function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -34,6 +37,38 @@ function toggleTheme() {
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
+}
+
+// Dynamic Category Tabs
+async function loadSources() {
+    try {
+        const response = await fetch('/api/brief/sources');
+        if (response.ok) {
+            availableSources = await response.json();
+            renderCategoryTabs();
+        }
+    } catch (e) {
+        // Fallback to default tabs
+        availableSources = [
+            {name: 'arXiv cs.AI', count: 0},
+            {name: '量子位', count: 0},
+            {name: '机器之心', count: 0},
+            {name: 'TechCrunch AI', count: 0}
+        ];
+        renderCategoryTabs();
+    }
+}
+
+function renderCategoryTabs() {
+    // Build tabs HTML
+    let tabsHtml = '<button class="tab-btn active" data-category="all">全部</button>';
+
+    availableSources.forEach(source => {
+        const categoryKey = source.name.toLowerCase().replace(/\s+/g, '');
+        tabsHtml += `<button class="tab-btn" data-category="${categoryKey}" data-source="${source.name}">${source.name}</button>`;
+    });
+
+    categoryTabs.innerHTML = tabsHtml;
 }
 
 // Utility Functions
@@ -150,11 +185,14 @@ function renderArticles(articles) {
 function filterAndRender() {
     let filtered = articlesData;
 
-    // Category filter - 实际过滤
+    // Category filter - 使用实际数据源名称过滤
     if (currentCategory !== 'all') {
         filtered = filtered.filter(a => {
             const source = (a.source || '').toLowerCase();
-            return source.includes(currentCategory.toLowerCase());
+            // 支持多种匹配方式
+            const categoryKey = source.replace(/\s+/g, '');
+            return categoryKey.includes(currentCategory.toLowerCase()) ||
+                   source.includes(currentCategory.toLowerCase());
         });
     }
 
@@ -185,6 +223,10 @@ function openArticleDetail(index) {
     const article = articlesData[index];
     if (!article) return;
 
+    // 使用真实ID，如果没有ID则用URL查询
+    const articleId = article.id;
+    const articleLink = article.link;
+
     // 首先显示基本信息
     articleDetail.innerHTML = `
         <div class="loading-state">
@@ -194,9 +236,10 @@ function openArticleDetail(index) {
     `;
     openModal();
 
-    // 然后调用API获取完整详情
-    const articleId = article.id || index + 1;
-    fetch(`/api/articles/${articleId}`)
+    // 根据是否有ID选择不同的API
+    const apiUrl = articleId ? `/api/articles/${articleId}` : `/api/articles/by-link?url=${encodeURIComponent(articleLink)}`;
+
+    fetch(apiUrl)
         .then(res => res.json())
         .then(data => {
             // 解析核心观点（可能是JSON字符串）
@@ -358,7 +401,7 @@ async function fetchLatestBrief() {
 }
 
 function parseBriefContent(content) {
-    // Parse HTML content to extract articles
+    // Parse HTML content to extract articles with real IDs
     const articles = [];
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = content;
@@ -371,7 +414,13 @@ function parseBriefContent(content) {
         if (ul && ul.tagName === 'UL') {
             const items = ul.querySelectorAll('li');
             items.forEach(item => {
-                const link = item.querySelector('a');
+                // 从 data-id 属性获取真实ID
+                const articleId = parseInt(item.getAttribute('data-id')) || 0;
+                const link = item.getAttribute('data-link') || '';
+
+                const titleLink = item.querySelector('a');
+                const title = titleLink ? titleLink.textContent : item.textContent;
+
                 const summaryP = item.querySelector('p');
                 const summaryText = summaryP ? summaryP.textContent : '';
 
@@ -390,8 +439,9 @@ function parseBriefContent(content) {
                 }
 
                 articles.push({
-                    title: link ? link.textContent : item.textContent,
-                    link: link ? link.href : '',
+                    id: articleId,
+                    title: title,
+                    link: link,
                     summary: summary,
                     '核心观点': keyPoints,
                     source: sourceName,
@@ -490,5 +540,6 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     updateDatePicker();
+    loadSources();  // 先加载动态分类
     fetchLatestBrief();
 });
